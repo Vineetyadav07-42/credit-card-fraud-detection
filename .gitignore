@@ -1,0 +1,20 @@
+# Virtual Environments
+.venv/
+venv/
+ENV/
+
+#Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo 
+*.pyd
+
+#Heavy datasets & trained models
+data/*.csv
+*.pkl
+
+#IDE / OS specific files
+.vscode/
+.idea/
+.DS_Store
+*.ipynb_checkpoints
