@@ -385,7 +385,7 @@ GitHub Repository
  Public REST API
 ```
 
-### Live Application
+### Live  Application
 
 API:
 
