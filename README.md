@@ -10,7 +10,7 @@ The trained machine learning model is deployed as a REST API using FastAPI and D
 
 **Interactive API Documentation:** http://13.234.69.92:8001/docs
 
-The Swagger UI allows users to interact with the fraud detection API and send transaction features for prediction.
+The Swagger UI  allows users to interact with the fraud detection API and send transaction features for prediction.
 
 ---
 
