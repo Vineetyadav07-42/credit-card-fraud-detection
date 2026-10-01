@@ -1,6 +1,18 @@
 # Credit Card Fraud Detection
 
-An end-to-end machine learning project for detecting fraudulent credit card transactions. The project covers model experimentation, model comparison, hyperparameter tuning, final model training, REST API development using FastAPI, Docker containerization, and cloud deployment.
+An end-to-end machine learning project for detecting fraudulent credit card transactions. The project covers model experimentation, model comparison, hyperparameter tuning, final model training, REST API development using FastAPI, Docker containerization, CI/CD, and cloud deployment on AWS.
+
+## Live Demo
+
+The trained machine learning model is deployed as a REST API using FastAPI and Docker on **AWS EC2**.
+
+**Live API:** http://13.234.69.92:8001
+
+**Interactive API Documentation:** http://13.234.69.92:8001/docs
+
+The Swagger UI allows users to interact with the fraud detection API and send transaction features for prediction.
+
+---
 
 ## Project Overview
 
@@ -41,10 +53,23 @@ FastAPI REST API
 Docker Containerization
    |
    v
-Cloud Deployment
+CI/CD Pipeline
+   |
+   v
+AWS ECR
+   |
+   v
+AWS EC2
+   |
+   v
+Live REST API
 ```
 
+---
+
 ## Technologies Used
+
+### Machine Learning
 
 * Python
 * Pandas
@@ -53,30 +78,48 @@ Cloud Deployment
 * XGBoost
 * Random Forest
 * Joblib
+
+### API
+
 * FastAPI
 * Pydantic
 * Uvicorn
+
+### Deployment & DevOps
+
 * Docker
 * Git
 * GitHub
-* Render
+* GitHub Actions
+* CI/CD
+* AWS ECR
+* AWS EC2
+* AWS Elastic IP
+
+---
 
 ## Project Structure
 
 ```text
 credit_card_resume/
-|
+
+│
 ├── data/
 │   └── creditcard.csv
-|
+│
 ├── notebooks/
 │   ├── Choosing_model.ipynb
 │   └── fine_tune.ipynb
-|
+│
 ├── src/
+│   ├── __init__.py
 │   ├── app.py
 │   └── training.py
-|
+│
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
+│
 ├── .dockerignore
 ├── .gitignore
 ├── Dockerfile
@@ -95,9 +138,12 @@ credit_card_resume/
 | `src/training.py`                | Trains the final Random Forest model         |
 | `src/app.py`                     | FastAPI application for serving predictions  |
 | `model.pkl`                      | Serialized trained Random Forest model       |
+| `.github/workflows/deploy.yml`   | GitHub Actions CI/CD workflow                |
 | `Dockerfile`                     | Configuration for building the Docker image  |
 | `requirements.txt`               | Python dependencies                          |
 | `README.md`                      | Project documentation                        |
+
+---
 
 ## Dataset
 
@@ -120,6 +166,7 @@ The model uses the following input features:
 
 ```text
 Time
+
 V1
 V2
 V3
@@ -148,10 +195,13 @@ V25
 V26
 V27
 V28
+
 Amount
 ```
 
 `V1` through `V28` are anonymized features provided by the dataset.
+
+---
 
 ## Model Comparison
 
@@ -174,6 +224,8 @@ The following evaluation metrics were used:
 | Random Forest       | 0.7588 |   0.8384 |   0.9995 |  0.9450 | 0.8386 |
 | XGBoost             | 0.5993 |   0.6465 |   0.9987 |  0.8452 | 0.6108 |
 
+---
+
 ## Model Selection
 
 Based on the comparison, Random Forest was selected as the final model.
@@ -190,6 +242,8 @@ Logistic Regression achieved the highest ROC-AUC of `0.9793`, but Random Forest 
 Since this is a fraud detection problem with an imbalanced target variable, recall and PR-AUC are particularly important. A model that has high accuracy but fails to identify fraudulent transactions would not be suitable for this application.
 
 Therefore, Random Forest was chosen as the final model.
+
+---
 
 ## Final Model
 
@@ -215,13 +269,15 @@ The resulting model is stored as:
 model.pkl
 ```
 
-## FastAPI
+---
+
+# FastAPI
 
 The trained model is served through a REST API using FastAPI.
 
-### API Endpoints
+## API Endpoints
 
-#### Health Check
+### Health Check
 
 ```http
 GET /
@@ -235,7 +291,7 @@ Response:
 }
 ```
 
-#### Fraud Prediction
+### Fraud Prediction
 
 ```http
 POST /predict
@@ -263,7 +319,9 @@ For a fraudulent transaction:
 }
 ```
 
-## API Documentation
+---
+
+# API Documentation
 
 FastAPI automatically generates interactive API documentation using Swagger UI.
 
@@ -273,48 +331,50 @@ When running locally, the documentation is available at:
 http://127.0.0.1:8000/docs
 ```
 
-After deployment:
+After AWS deployment:
 
 ```text
-https://credit-card-fraud-detection-1-x62y.onrender.com/docs
+http://13.234.69.92:8001/docs
 ```
 
-## Running the Project Locally
+---
 
-### 1. Clone the Repository
+# Running the Project Locally
+
+## 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Vineetyadav07-42/credit-card-fraud-detection.git
 cd credit_card_resume
 ```
 
-### 2. Create a Virtual Environment
+## 2. Create a Virtual Environment
 
 ```bash
 python -m venv .venv
 ```
 
-### 3. Activate the Virtual Environment
+## 3. Activate the Virtual Environment
 
-Windows:
+### Windows
 
-```bash
+```powershell
 .venv\Scripts\activate
 ```
 
-Linux/macOS:
+### Linux/macOS
 
 ```bash
 source .venv/bin/activate
 ```
 
-### 4. Install Dependencies
+## 4. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Start the FastAPI Application
+## 5. Start the FastAPI Application
 
 ```bash
 uvicorn src.app:app --reload
@@ -332,17 +392,19 @@ Swagger documentation:
 http://127.0.0.1:8000/docs
 ```
 
-## Running with Docker
+---
+
+# Running with Docker
 
 The application is containerized using Docker.
 
-### Build the Docker Image
+## Build the Docker Image
 
 ```bash
 docker build -t credit-card-fraud-api .
 ```
 
-### Run the Container
+## Run the Container
 
 ```bash
 docker run -p 8000:8000 credit-card-fraud-api
@@ -360,46 +422,112 @@ Swagger documentation:
 http://localhost:8000/docs
 ```
 
-## Deployment
+---
 
-The application is containerized using Docker and deployed as a web service on Render.
+# CI/CD Pipeline
 
-The deployment workflow is:
+The project uses **GitHub Actions** to automate the build and deployment process.
+
+The workflow configuration is located at:
+
+```text
+.github/workflows/deploy.yml
+```
+
+Whenever changes are pushed to the GitHub repository, the CI/CD workflow automates the deployment process.
+
+The deployment process includes:
+
+```text
+Code Push to GitHub
+        ↓
+GitHub Actions
+        ↓
+Build Docker Image
+        ↓
+Push Docker Image to AWS ECR
+        ↓
+Connect to AWS EC2
+        ↓
+Pull Updated Docker Image
+        ↓
+Stop/Replace Previous Container
+        ↓
+Run Updated Container
+        ↓
+Live FastAPI Application
+```
+
+This eliminates the need to manually perform the Docker build, ECR push, and EC2 deployment steps after every code change.
+
+---
+
+# Cloud Deployment
+
+The application is deployed using **AWS ECR and AWS EC2**.
+
+The deployment architecture is:
 
 ```text
 GitHub Repository
-       |
-       v
-     Render
-       |
-       v
- Docker Image Build
-       |
-       v
- Docker Container
-       |
-       v
- FastAPI Application
-       |
-       v
- Public REST API
+       ↓
+GitHub Actions CI/CD
+       ↓
+Docker Build
+       ↓
+AWS ECR
+       ↓
+AWS EC2
+       ↓
+Docker Container
+       ↓
+FastAPI
+       ↓
+Random Forest Model
+       ↓
+Prediction
 ```
 
-### Live  Application
+## AWS Components
 
-API:
+* **AWS ECR** – Stores the Docker image.
+* **AWS EC2** – Hosts and runs the Docker container.
+* **GitHub Actions** – Automates the CI/CD deployment process.
+* **AWS Elastic IP** – Provides a stable public IP address for the deployed API.
+
+## Container Port Mapping
+
+The FastAPI application runs on port `8000` inside the Docker container.
+
+The EC2 instance exposes the application externally on port `8001`.
 
 ```text
-https://credit-card-fraud-detection-1-x62y.onrender.com
+EC2 Port 8001
+      ↓
+Docker Port 8000
+      ↓
+FastAPI
 ```
 
-Swagger documentation:
+## Live Application
+
+**API:**
 
 ```text
-https://credit-card-fraud-detection-1-x62y.onrender.com/docs
+http://13.234.69.92:8001
 ```
 
-## Key Learning Outcomes
+**Swagger UI:**
+
+```text
+http://13.234.69.92:8001/docs
+```
+
+The application uses an **AWS Elastic IP** to provide a stable public IP address for the deployed API.
+
+---
+
+# Key Learning Outcomes
 
 This project provided practical experience with:
 
@@ -419,13 +547,19 @@ This project provided practical experience with:
 * Pydantic
 * Docker
 * Git and GitHub
+* GitHub Actions
+* CI/CD
+* AWS ECR
+* AWS EC2
+* AWS Elastic IP
 * Cloud deployment
 
+---
 
+# Author
 
+**Vineet Yadav**
 
-## Author
+Machine Learning / ML Engineering Portfolio Project
 
-Vineet Yadav
-
-GitHub: https://github.com/Vineetyadav07-42
+**GitHub:** https://github.com/Vineetyadav07-42
