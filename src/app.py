@@ -5,7 +5,7 @@ import joblib
 import pandas as pd
 
 
-MODEL_PATH = Path(__file__).resolve().parent.parent / "model.pkl"
+MODEL_PATH = Path(__file__).resolve().parent.parent / "model.joblib"
 
 model = joblib.load(MODEL_PATH)
 
