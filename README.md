@@ -148,8 +148,10 @@ max_features=0.3, max_depth=20, class_weight="balanced_subsample"
 
 
 
-## Repository  Structure
 
+## Repository Structure
+
+```text
 credit-card-fraud-detection/
 ├── data/
 │   └── creditcard.csv
@@ -170,6 +172,7 @@ credit-card-fraud-detection/
 ├── .gitignore
 ├── .dockerignore
 └── README.md
+```
 
 
 ## Running Locally
