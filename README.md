@@ -148,7 +148,7 @@ max_features=0.3, max_depth=20, class_weight="balanced_subsample"
 
 
 
-## Repository Structure
+## Repository  Structure
 
 credit-card-fraud-detection/
 ├── data/
