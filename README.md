@@ -1,565 +1,321 @@
+
 # Credit Card Fraud Detection
 
-An end-to-end machine learning project for detecting fraudulent credit card transactions. The project covers model experimentation, model comparison, hyperparameter tuning, final model training, REST API development using FastAPI, Docker containerization, CI/CD, and cloud deployment on AWS.
+An end-to-end machine learning project that detects fraudulent credit card transactions using traditional machine learning algorithms and PyTorch neural networks. The project includes model comparison, hyperparameter tuning, REST API development, Docker containerization, and AWS-based CI/CD deployment.
 
-## Live Demo
 
-The trained machine learning model is deployed as a REST API using FastAPI and Docker on **AWS EC2**.
+## Live Deployment
 
-**Live API:** http://13.234.69.92:8001
+The Credit Card Fraud Detection API is deployed on AWS EC2.
 
-**Interactive API Documentation:** http://13.234.69.92:8001/docs
+- **Interactive API documentation (Swagger UI):** http://13.234.69.92:8001/docs
+- **API base URL:** http://13.234.69.92:8001/
 
-The Swagger UI  allows users to interact with the fraud detection API and send transaction features for prediction.
+Use the Swagger UI to try the `POST /predict` endpoint and submit a transaction for prediction. The EC2 public IP can change if the instance is stopped and restarted without an Elastic IP, so update these links if the deployment address changes.
 
----
+
 
 ## Project Overview
 
-Credit card fraud detection is a binary classification problem where each transaction is classified as either:
+Credit card fraud detection is an imbalanced binary classification problem where fraudulent transactions represent a very small proportion of all transactions. The goal is to identify fraudulent transactions while minimizing missed fraud and unnecessary false alarms.
 
-* `0` — Legitimate transaction
-* `1` — Fraudulent transaction
+This project compares several classification algorithms using stratified cross-validation, tunes the two best candidates using Precision-Recall AUC (PR-AUC), and serves the final Random Forest model through a FastAPI application.
 
-The dataset is highly imbalanced, making fraud detection more challenging. Because of this, model evaluation is not based on accuracy alone. Recall, F1-score, ROC-AUC, and PR-AUC are also considered when selecting the final model.
 
-## Project Workflow
 
-```text
-Dataset
-   |
-   v
-Exploratory Data Analysis
-   |
-   v
-Data Preparation
-   |
-   v
-Model Comparison
-   |
-   v
-Hyperparameter Tuning
-   |
-   v
-Final Model Training
-   |
-   v
-Model Serialization
-   |
-   v
-FastAPI REST API
-   |
-   v
-Docker Containerization
-   |
-   v
-CI/CD Pipeline
-   |
-   v
-AWS ECR
-   |
-   v
-AWS EC2
-   |
-   v
-Live REST API
-```
+## Key Features
 
----
+- Class imbalance analysis
+- Comparison of Logistic Regression, Decision Tree, Random Forest, XGBoost, and a PyTorch neural network
+- Leak-free stratified 5-fold cross-validation (scaling fitted inside each fold, identical folds for all models)
+- Randomized hyperparameter search for Random Forest and the neural network (4 configurations each)
+- PyTorch neural network with mini-batch training
+- Evaluation using precision, recall, F1-score, ROC-AUC, and PR-AUC
+- REST API built with FastAPI
+- Docker containerization
+- AWS ECR and EC2 deployment
+- GitHub Actions CI/CD workflow for building, publishing, and deploying the image
 
-## Technologies Used
 
-### Machine Learning
 
-* Python
-* Pandas
-* NumPy
-* Scikit-learn
-* XGBoost
-* Random Forest
-* Joblib
+## Tech Stack
 
-### API
+| Category             | Technologies          |
+| -------------------- | --------------------- |
+| Language             | Python                |
+| Data processing      | Pandas, NumPy         |
+| Machine learning     | Scikit-learn, XGBoost |
+| Deep learning        | PyTorch               |
+| Model evaluation     | Scikit-learn metrics  |
+| API development      | FastAPI, Pydantic     |
+| Model serialization  | Joblib                |
+| Containerization     | Docker                |
+| Cloud infrastructure | AWS ECR, AWS EC2      |
+| CI/CD                | GitHub Actions        |
+| Version control      | Git, GitHub           |
 
-* FastAPI
-* Pydantic
-* Uvicorn
 
-### Deployment & DevOps
 
-* Docker
-* Git
-* GitHub
-* GitHub Actions
-* CI/CD
-* AWS ECR
-* AWS EC2
-* AWS Elastic IP
-
----
-
-## Project Structure
-
-```text
-credit_card_resume/
-
-│
-├── data/
-│   └── creditcard.csv
-│
-├── notebooks/
-│   ├── Choosing_model.ipynb
-│   └── fine_tune.ipynb
-│
-├── src/
-│   ├── __init__.py
-│   ├── app.py
-│   └── training.py
-│
-├── .github/
-│   └── workflows/
-│       └── deploy.yml
-│
-├── .dockerignore
-├── .gitignore
-├── Dockerfile
-├── model.pkl
-├── README.md
-└── requirements.txt
-```
-
-### File Description
-
-| File/Folder                      | Description                                  |
-| -------------------------------- | -------------------------------------------- |
-| `data/`                          | Contains the credit card transaction dataset |
-| `notebooks/Choosing_model.ipynb` | Model comparison and evaluation              |
-| `notebooks/fine_tune.ipynb`      | Hyperparameter tuning                        |
-| `src/training.py`                | Trains the final Random Forest model         |
-| `src/app.py`                     | FastAPI application for serving predictions  |
-| `model.pkl`                      | Serialized trained Random Forest model       |
-| `.github/workflows/deploy.yml`   | GitHub Actions CI/CD workflow                |
-| `Dockerfile`                     | Configuration for building the Docker image  |
-| `requirements.txt`               | Python dependencies                          |
-| `README.md`                      | Project documentation                        |
-
----
 
 ## Dataset
 
-The dataset contains credit card transactions with anonymized features.
+[Kaggle: Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud): 284,807 transactions by European cardholders, of which 492 (about 0.17%) are fraudulent.
 
-The target variable is:
+- `Time`: Seconds elapsed between the transaction and the first transaction in the dataset.
+- `Amount`: Transaction amount.
+- `V1`–`V28`: Anonymized numerical features (PCA components).
+- `Class`: Target variable (`0` = legitimate, `1` = fraudulent).
 
-```text
-Class
-```
+The dataset is highly imbalanced, so accuracy alone is insufficient for evaluating model performance.
 
-where:
+The dataset is not included in this repository. Download it and place it at `data/creditcard.csv`.
 
-```text
-0 = Legitimate
-1 = Fraudulent
-```
 
-The model uses the following input features:
+## Project Workflow
 
-```text
-Time
+1. **Data preparation:** Load the dataset, inspect the class distribution, and separate features from the target.
+2. **Train-test split:** Create an 80% training set and a 20% holdout test set using stratified sampling. The test set is not used until the final evaluation.
+3. **Model selection:** Compare multiple classifiers using identical stratified 5-fold cross-validation splits on the training set.
+4. **Preprocessing:** Standardize `Time` and `Amount`, fitting the scaler on the training portion of each fold only (a Pipeline for scikit-learn models, manual per-fold scaling for the neural network).
+5. **Hyperparameter tuning:** Tune the two finalists with the same budget: `RandomizedSearchCV` for Random Forest and a custom randomized search for the neural network, both scored on PR-AUC.
+6. **Model evaluation:** Use PR-AUC as the primary selection metric and review precision, recall, and F1-score alongside it.
+7. **Final evaluation and model choice:** Evaluate the tuned models once on the holdout test set. Random Forest and the neural network tied, so Random Forest was chosen for simplicity.
+8. **Final training:** Refit the chosen Random Forest configuration on the full dataset and save it with Joblib. The test metrics reported below come from the same configuration trained on the training split only.
+9. **API development:** Load the serialized model in FastAPI and expose prediction endpoints.
+10. **Deployment:** Package the application and model into a Docker image, publish it to Amazon ECR, and run it on EC2 through GitHub Actions.
 
-V1
-V2
-V3
-V4
-V5
-V6
-V7
-V8
-V9
-V10
-V11
-V12
-V13
-V14
-V15
-V16
-V17
-V18
-V19
-V20
-V21
-V22
-V23
-V24
-V25
-V26
-V27
-V28
 
-Amount
-```
+## Models Implemented
 
-`V1` through `V28` are anonymized features provided by the dataset.
+### Traditional Machine Learning
 
----
+- Logistic Regression
+- Decision Tree Classifier
+- Random Forest Classifier
+- XGBoost Classifier
 
-## Model Comparison
+### Neural Network
 
-Multiple machine learning models were evaluated to determine which model performed best for the fraud detection task.
+A feed-forward binary classification network in PyTorch (ReLU activations, optional dropout, Adam optimizer, `BCEWithLogitsLoss`). The baseline uses one hidden layer with 10 units. The tuning search varies hidden-layer sizes, dropout, learning rate, weight decay, batch size, epochs, and positive-class weighting.
 
-The following evaluation metrics were used:
+### Hyperparameter Tuning
 
-* Recall
-* F1-score
-* Accuracy
-* ROC-AUC
-* PR-AUC
+Randomized search with cross-validation on the training set only. Each finalist was given the same budget of 4 configurations x 5 folds. PR-AUC is the tuning metric because the dataset contains very few fraudulent transactions.
 
-### Results
+## Results
 
-| Model               | Recall | F1-Score | Accuracy | ROC-AUC | PR-AUC |
-| ------------------- | -----: | -------: | -------: | ------: | -----: |
-| Logistic Regression | 0.6268 |   0.7286 |   0.9992 |  0.9793 | 0.7598 |
-| Decision Tree       | 0.7283 |   0.7333 |   0.9991 |  0.8639 | 0.5394 |
-| Random Forest       | 0.7588 |   0.8384 |   0.9995 |  0.9450 | 0.8386 |
-| XGBoost             | 0.5993 |   0.6465 |   0.9987 |  0.8452 | 0.6108 |
+### Baseline CV (5-fold stratified, training set)
 
----
+| Model                                     | PR-AUC (mean ± std) |
+| ----------------------------------------- | ------------------- |
+| Random Forest                             | 0.840 ± 0.032       |
+| Neural network (1 hidden layer, 10 units) | 0.834 ± 0.037       |
+| Logistic Regression                       | 0.762 ± 0.042       |
+| XGBoost (defaults)                        | 0.749 ± 0.029       |
+| Decision Tree                             | 0.598 ± 0.022       |
 
-## Model Selection
+Random Forest and the neural network tied (the gap is smaller than one standard deviation), so both were tuned.
 
-Based on the comparison, Random Forest was selected as the final model.
 
-Random Forest achieved the highest:
+### Held-out test set (56,962 transactions, 98 frauds, threshold 0.5)
 
-* Recall: `0.7588`
-* F1-score: `0.8384`
-* Accuracy: `0.9995`
-* PR-AUC: `0.8386`
+| Model (tuned)  | PR-AUC | Precision | Recall | F1    | TP / FP / FN |
+| -------------- | ------ | --------- | ------ | ----- | ------------ |
+| Random Forest  | 0.853  | 0.892     | 0.755  | 0.818 | 74 / 9 / 24  |
+| Neural network | 0.848  | 0.884     | 0.776  | 0.826 | 76 / 10 / 22 |
 
-Logistic Regression achieved the highest ROC-AUC of `0.9793`, but Random Forest provided a better overall balance of recall, F1-score, and PR-AUC.
+The models tied again, so **Random Forest was selected for simplicity**: no feature scaling required, faster training and inference, and a lighter container than a PyTorch model.
 
-Since this is a fraud detection problem with an imbalanced target variable, recall and PR-AUC are particularly important. A model that has high accuracy but fails to identify fraudulent transactions would not be suitable for this application.
-
-Therefore, Random Forest was chosen as the final model.
-
----
-
-## Final Model
-
-The final model is a Random Forest Classifier with the following configuration:
+Final Random Forest parameters:
 
 ```python
-RandomForestClassifier(
-    n_estimators=200,
-    random_state=42,
-    max_depth=None
-)
+n_estimators=200, min_samples_leaf=2, max_samples=0.5,
+max_features=0.3, max_depth=20, class_weight="balanced_subsample"
 ```
 
-The model is trained on the available dataset and saved using Joblib:
+## Evaluation Metrics
 
-```python
-joblib.dump(model, MODEL_PATH)
-```
+| Metric    | Purpose                                                                                          |
+| --------- | ------------------------------------------------------------------------------------------------ |
+| Precision | Measures how many predicted fraud cases are actually fraudulent.                                 |
+| Recall    | Measures how many actual fraud cases are detected.                                               |
+| F1-score  | Balances precision and recall.                                                                   |
+| ROC-AUC   | Measures the model's ability to rank positive cases above negative cases.                        |
+| PR-AUC    | Evaluates precision-recall performance, particularly useful for imbalanced classification.       |
+| Accuracy  | Not used for model selection: predicting "legitimate" for everything already scores about 99.8%. |
 
-The resulting model is stored as:
+**Primary metric: PR-AUC.** Precision and recall matter as well, because missed fraud and false alarms have different operational costs.
 
-```text
-model.pkl
-```
 
----
 
-# FastAPI
+## Repository Structure
 
-The trained model is served through a REST API using FastAPI.
+credit-card-fraud-detection/
+├── data/
+│   └── creditcard.csv
+├── notebooks/
+│   ├── Choosing_model.ipynb
+│   ├── fine_tune_randomforest.ipynb
+│   ├── neural_network.ipynb
+│   └── fine_tune_nn.ipynb
+├── src/
+│   ├── app.py
+│   └── training.py
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
+├── model.joblib
+├── Dockerfile
+├── requirements.txt
+├── .gitignore
+├── .dockerignore
+└── README.md
 
-## API Endpoints
 
-### Health Check
+## Running Locally
 
-```http
-GET /
-```
-
-Response:
-
-```json
-{
-    "message": "Credit Card Fraud Detection API is running"
-}
-```
-
-### Fraud Prediction
-
-```http
-POST /predict
-```
-
-The endpoint accepts transaction features and returns the predicted class, fraud probability, and classification result.
-
-Example response:
-
-```json
-{
-    "prediction": 0,
-    "fraud_probability": 0.02,
-    "result": "Legitimate transaction"
-}
-```
-
-For a fraudulent transaction:
-
-```json
-{
-    "prediction": 1,
-    "fraud_probability": 0.94,
-    "result": "Fraudulent transaction"
-}
-```
-
----
-
-# API Documentation
-
-FastAPI automatically generates interactive API documentation using Swagger UI.
-
-When running locally, the documentation is available at:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-After AWS deployment:
-
-```text
-http://13.234.69.92:8001/docs
-```
-
----
-
-# Running the Project Locally
-
-## 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Vineetyadav07-42/credit-card-fraud-detection.git
-cd credit_card_resume
+cd credit-card-fraud-detection
 ```
 
-## 2. Create a Virtual Environment
+### 2. Create a virtual environment
 
 ```bash
 python -m venv .venv
 ```
 
-## 3. Activate the Virtual Environment
+Activate it on Windows:
 
-### Windows
-
-```powershell
+```bash
 .venv\Scripts\activate
 ```
 
-### Linux/macOS
-
-```bash
-source .venv/bin/activate
-```
-
-## 4. Install Dependencies
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 5. Start the FastAPI Application
+### 4. Start the API
+
+From the repository root:
 
 ```bash
-uvicorn src.app:app --reload
+uvicorn src.app:app --host 0.0.0.0 --port 8000
 ```
 
-The API will be available at:
+Open the interactive API documentation at `http://localhost:8000/docs`.
 
-```text
-http://127.0.0.1:8000
+The trained model (`model.joblib`) is included in the repository, so the dataset is only needed to rerun the notebooks.
+
+
+## API Usage
+
+| Method | Endpoint   | Description                          |
+| ------ | ---------- | ------------------------------------ |
+| GET    | `/`        | Status message                       |
+| POST   | `/predict` | Fraud prediction for one transaction |
+
+
+### Prediction endpoint
+
+**POST** `/predict`
+
+The request body must contain all 30 features: `Time`, `V1` through `V28`, and `Amount`.
+
+Example request (the first transaction in the dataset, which is legitimate):
+
+```json
+{
+  "Time": 0.0,
+  "V1": -1.3598, "V2": -0.0728, "V3": 2.5363, "V4": 1.3782,
+  "V5": -0.3383, "V6": 0.4624, "V7": 0.2396, "V8": 0.0987,
+  "V9": 0.3638, "V10": 0.0908, "V11": -0.5516, "V12": -0.6178,
+  "V13": -0.9914, "V14": -0.3112, "V15": 1.4682, "V16": -0.4704,
+  "V17": 0.2080, "V18": 0.0258, "V19": 0.4040, "V20": 0.2514,
+  "V21": -0.0183, "V22": 0.2778, "V23": -0.1105, "V24": 0.0669,
+  "V25": 0.1285, "V26": -0.1891, "V27": 0.1336, "V28": -0.0211,
+  "Amount": 149.62
+}
 ```
 
-Swagger documentation:
+Response fields:
 
-```text
-http://127.0.0.1:8000/docs
-```
+| Field               | Type   | Description                                              |
+| ------------------- | ------ | -------------------------------------------------------- |
+| `prediction`        | int    | Predicted class: `1` = fraud, `0` = legitimate           |
+| `fraud_probability` | float  | Model probability that the transaction is fraudulent     |
+| `result`            | string | `"Fraudulent transaction"` or `"Legitimate transaction"` |
 
----
+## Docker
 
-# Running with Docker
-
-The application is containerized using Docker.
-
-## Build the Docker Image
+Build the Docker image:
 
 ```bash
-docker build -t credit-card-fraud-api .
+docker build -t credit-card-fraud .
 ```
 
-## Run the Container
+Run the container:
 
 ```bash
-docker run -p 8000:8000 credit-card-fraud-api
+docker run -d \
+  --name credit-card-fraud-api \
+  -p 8001:8000 \
+  credit-card-fraud
 ```
 
-The API will then be available at:
+Access the API at `http://localhost:8001/docs`.
 
-```text
-http://localhost:8000
-```
 
-Swagger documentation:
 
-```text
-http://localhost:8000/docs
-```
+## AWS Deployment and CI/CD
 
----
+When code is pushed to the `main` branch, GitHub Actions:
 
-# CI/CD Pipeline
+1. Checks out the repository.
+2. Sets up Python and installs dependencies (the test step is a placeholder for now).
+3. Configures AWS credentials and logs in to Amazon ECR.
+4. Builds the Docker image and pushes it to ECR with the `latest` tag.
+5. Connects to the EC2 instance over SSH, pulls the new image, stops and removes the old container, and starts the new one on port 8001.
 
-The project uses **GitHub Actions** to automate the build and deployment process.
+### Required GitHub Secrets
 
-The workflow configuration is located at:
+Configure these in **Settings → Secrets and variables → Actions**:
 
-```text
-.github/workflows/deploy.yml
-```
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `ECR_REPOSITORY`
+- `EC2_HOST`
+- `EC2_USERNAME`
+- `EC2_SSH_KEY`
 
-Whenever changes are pushed to the GitHub repository, the CI/CD workflow automates the deployment process.
+The EC2 instance needs Docker, the AWS CLI, and an IAM role that allows pulling from ECR. Its security group must allow inbound traffic on port 8001.
 
-The deployment process includes:
+## Limitations
 
-```text
-Code Push to GitHub
-        ↓
-GitHub Actions
-        ↓
-Build Docker Image
-        ↓
-Push Docker Image to AWS ECR
-        ↓
-Connect to AWS EC2
-        ↓
-Pull Updated Docker Image
-        ↓
-Stop/Replace Previous Container
-        ↓
-Run Updated Container
-        ↓
-Live FastAPI Application
-```
+- **Fixed decision threshold (0.5):** Recall is about 0.76, so roughly one in four frauds in the test set was missed. The threshold could be tuned on out-of-fold predictions to trade precision for recall.
+- **Light tuning:** Only 4 configurations per model were searched, so better settings may exist.
+- **No automated tests yet:** The CI test step is a placeholder, and the deployment does not verify that the new container is healthy after the restart.
+- **Small test set:** The test set contains 98 frauds, so differences of a few frauds between models are within noise.
+- **Deployed model has no separate held-out score:** It uses the same hyperparameters as the evaluated model but is retrained on all data.
+- **Dataset:** The features are PCA-anonymized and come from a single, older dataset. Real-world use would require monitoring and retraining.
 
-This eliminates the need to manually perform the Docker build, ECR push, and EC2 deployment steps after every code change.
+## Future Improvements
 
----
+- Add automated unit and API tests with `pytest` and run them in CI.
+- Add a `/health` endpoint and a post-deploy health check.
+- Tag Docker images with the commit SHA to allow rollback to a previous release.
+- Tune the classification threshold on validation data.
+- Add model and data validation checks to the CI/CD workflow.
+- Monitor prediction distributions and model performance over time.
+- Add structured logging and richer API error handling.
+- Track experiments and model versions using MLflow.
+- Evaluate inference latency and resource usage under load.
 
-# Cloud Deployment
+## Disclaimer
 
-The application is deployed using **AWS ECR and AWS EC2**.
-
-The deployment architecture is:
-
-```text
-GitHub Repository
-       ↓
-GitHub Actions CI/CD
-       ↓
-Docker Build
-       ↓
-AWS ECR
-       ↓
-AWS EC2
-       ↓
-Docker Container
-       ↓
-FastAPI
-       ↓
-Random Forest Model
-       ↓
-Prediction
-```
-
-## AWS Components
-
-* **AWS ECR** – Stores the Docker image.
-* **AWS EC2** – Hosts and runs the Docker container.
-* **GitHub Actions** – Automates the CI/CD deployment process.
-* **AWS Elastic IP** – Provides a stable public IP address for the deployed API.
-
-## Container Port Mapping
-
-The FastAPI application runs on port `8000` inside the Docker container.
-
-The EC2 instance exposes the application externally on port `8001`.
-
-```text
-EC2 Port 8001
-      ↓
-Docker Port 8000
-      ↓
-FastAPI
-```
-
-## Live Application
-
-**API:**
-
-```text
-http://13.234.69.92:8001
-```
-
-**Swagger UI:**
-
-```text
-http://13.234.69.92:8001/docs
-```
-
-The application uses an **AWS Elastic IP** to provide a stable public IP address for the deployed API.
-
----
-
-# Key Learning Outcomes
-
-This project provided practical experience with:
-
-* Binary classification
-* Imbalanced classification problems
-* Exploratory data analysis
-* Model comparison
-* Model evaluation
-* Hyperparameter tuning
-* Random Forest
-* XGBoost
-* Precision and recall trade-offs
-* ROC-AUC and PR-AUC
-* Model serialization using Joblib
-* REST API development
-* FastAPI
-* Pydantic
-* Docker
-* Git and GitHub
-* GitHub Actions
-* CI/CD
-* AWS ECR
-* AWS EC2
-* AWS Elastic IP
-* Cloud deployment
-
----
-
-# Author
-
-**Vineet Yadav**
-
-Machine Learning / ML Engineering Portfolio Project
-
-**GitHub:** https://github.com/Vineetyadav07-42
+This project is intended for educational and portfolio purposes. It is not a production-certified financial fraud detection system. Predictions should not be used as the sole basis for real financial decisions.
